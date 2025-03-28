@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AP Hangman Studies</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bree+Serif&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bree+Serif&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="acorn.png">
+</head>
+<body>
+    <div class="overlay"></div>
+    <div class="gradient-container"></div>
+    <div id="blur-overlay"></div>
+    <div class="custom-cursor"></div>
+    <div class="realcustom-cursor"></div>
+    <div id="container">
+    <img src="acorn.png" alt="">
+      <h1>AP Hangman Studies</h1>
+      <div id="subjectSelection">
+          <p>Welcome to AP Hangman Studies, where you'll be 'studying' through playing a fun game!</p>
+
+          <p>Choose your subject:</p>
+          <button onclick="selectSubject(1)">AP Euro</button>
+          <button onclick="selectSubject(2)">APUSH</button>
+      </div>
+
+      <div id="gameArea" class="hidden">
+          <p id="question"></p>
+          <p id="word"></p>
+          <p id="attempts"></p>
+          <input type="text" id="guessInput" maxlength="1">
+          <button onclick="makeGuess()">Guess</button>
+          <p id="message"></p>
+      </div>
+
+    </div>
+
+    <script>
+        let questions, answers, shuffledIndices, currentQuestionIndex = 0, answer, guessed, attempts, guessedLetters;
+        let longAmericanWord = `supercalifragilisticexpialidocious`;
+        function selectSubject(subject) {
+            if (subject === 1) {
+                questions = [
+                    "What is the name of the first scientist?",
+                    "Who created gravity?",
+                    "Where did Columbus first land?",
+                    "Where did Karl Marx live?",
+                    "What separates WW2 from the other wars?",
+                    "What is the name of the split of Christianity?",
+                    "Who is the most important man in the history of the world?",
+                    "Which invention caused WW3?",
+                    "What is the longest german word? (It's related to beef labeling)"
+                ];
+                answers = ["Einstein", "Newton", "America", "Russia", "Bigness", "Renaissance", "DanJones","PrintingPress", "Rindfleischetikettierungsuberwachungsaufgabenubertragungsgesetz"];
+            } else {
+                questions = [
+                    "Where was the first tea party held?",
+                    "What intellectual movement inspired the founding fathers?",
+                    "Who was the 34th first lady?",
+                    "What was the first city in the US?",
+                    "Which guy started the Cold War?",
+                    "Who invented the internet?",
+                    "Who invented the fruit 'apple'?",
+                    "What is the only indigenous bird to the US?",
+                    "What is the longest word in American?"
+                ];
+                answers = ["Boston", "Independence", "Mamie", "LosAngeles", "Lenin", "MrBeast", "TimCook", "BaldEagle", longAmericanWord];
+            }
+            shuffledIndices = [...Array(questions.length).keys()].sort(() => Math.random() - 0.5);
+            document.getElementById('subjectSelection').classList.add('hidden');
+            document.getElementById('gameArea').classList.remove('hidden');
+            startRound();
+        }
+
+        function startRound() {
+            if (currentQuestionIndex >= questions.length) {
+                document.getElementById('gameArea').innerHTML = "<h2>Congratulations! You completed all rounds!</h2>";
+                return;
+            }
+            let index = shuffledIndices[currentQuestionIndex];
+            answer = answers[index];
+            guessed = Array(answer.length).fill('_');
+            attempts = new Set(answer.toLowerCase()).size + 1;
+            guessedLetters = new Set();
+            document.getElementById('question').innerText = questions[index];
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            document.getElementById('word').innerText = guessed.join(' ');
+            document.getElementById('attempts').innerText = `Wrong Attempts left: ${attempts}`;
+            document.getElementById('message').innerText = '';
+        }
+          document.getElementById('guessInput').addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            makeGuess();
+            }
+        });
+
+        function makeGuess() {
+            let input = document.getElementById('guessInput');
+            let guess = input.value.toLowerCase();
+            input.value = '';
+
+            if (guess.length !== 1 || !/[a-z]/.test(guess)) {
+                document.getElementById('message').innerText = "Please enter a single valid letter.";
+                return;
+            }
+
+            if (guessedLetters.has(guess)) {
+                document.getElementById('message').innerText = "You already guessed that letter you silly goose.";
+                return;
+            }
+
+            guessedLetters.add(guess);
+            if (answer.toLowerCase().includes(guess)) {
+                for (let i = 0; i < answer.length; i++) {
+                    if (answer[i].toLowerCase() === guess) guessed[i] = answer[i];
+                }
+            } else {
+                attempts--;
+            }
+
+            updateDisplay();
+            checkGameStatus();
+        }
+
+        function checkGameStatus() {
+            if (!guessed.includes('_')) {
+                document.getElementById('message').innerText = "Correct! Moving to next question...";
+                setTimeout(() => {
+                    currentQuestionIndex++;
+                    startRound();
+                }, 3000);
+            } else if (attempts <= 0) {
+                document.getElementById('message').innerText = `Game Over! The answer was: ${answer}`;
+                document.getElementById('gameArea').innerHTML += "<p>Refresh the page to try again.</p>";
+            }
+        }
+
+        const cursor = document.querySelector('.custom-cursor');
+        const realcursor = document.querySelector('.realcustom-cursor');
+
+        let mouseX = 0,
+          mouseY = 0;
+        let cursorX = 0,
+          cursorY = 0;
+
+        // Update mouse position
+        document.addEventListener('mousemove', (e) => {
+          mouseX = e.clientX;
+          mouseY = e.clientY;
+        });
+
+        // Smooth follow effect
+        function animateCursor() {
+          cursorX += (mouseX - cursorX) * 0.1;
+          cursorY += (mouseY - cursorY) * 0.1;
+
+          cursor.style.left = `${cursorX}px`;
+          cursor.style.top = `${cursorY}px`;
+          realcursor.style.left = `${mouseX}px`;
+          realcursor.style.top = `${mouseY}px`;
+
+          requestAnimationFrame(animateCursor);
+        }
+
+        // Add pop effect
+        document.addEventListener('mousemove', () => {
+          cursor.classList.remove('active');
+          clearTimeout(cursor.popTimeout);
+          cursor.popTimeout = setTimeout(() => {
+            cursor.classList.add('active');
+          }, 500);
+        });
+
+        animateCursor();
+
+    </script>
+</body>
+</html>
